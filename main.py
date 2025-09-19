@@ -54,6 +54,12 @@ def calc(string: str) -> int:
     return eval(string_end)
 
 
-# def convert_to_str(number):
-#     if len(str(number)) > 1:
+def convert_to_str(number):
+    if len(str(number)) == 1:
+        return "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(number)])
+    elif len(str(number)) == 2:
+        des = str(number)[0]
+        cif = str(number)[1]
+        return "".join([i[0] for i in dict_of_big_numbers.items() if i[1] == str(des) + '0']) + " " + "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(cif)])
+        
 
