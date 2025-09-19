@@ -51,7 +51,9 @@ def calc(string: str) -> int:
                 string_end += dict_of_big_numbers[element] + "+"
             else:
                 string_end += dict_of_big_numbers[element]
-    return eval(string_end)
+    if eval(string_end) > 100:
+        return "Число больше ста"
+    return convert_to_str(eval(string_end))
 
 
 def convert_to_str(number):
@@ -62,4 +64,4 @@ def convert_to_str(number):
         cif = str(number)[1]
         return "".join([i[0] for i in dict_of_big_numbers.items() if i[1] == str(des) + '0']) + " " + "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(cif)])
         
-
+print(calc(input()))
