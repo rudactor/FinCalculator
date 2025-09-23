@@ -22,7 +22,7 @@ dict_of_numbers = {
 }
 
 dict_of_big_numbers = {
-    "двацать": "20",
+    "двадцать": "20",
     "тридцать": "30",
     "сорок": "40",
     "пятьдесят": "50",
@@ -39,6 +39,13 @@ dict_of_operations = {
     "умножить_на": "*"
 }
 
+fraction_units = {
+    "десятая": 1, "десятых": 1,
+    "сотая": 2, "сотых": 2,
+    "тысячная": 3, "тысячных": 3
+}
+
+
 def calc(string: str) -> int:
     string = string.replace(" на", "_на")
     list_string_numbers = string.split()
@@ -52,10 +59,12 @@ def calc(string: str) -> int:
         elif element in dict_of_operations:
             string_end += dict_of_operations[element]
         elif element in dict_of_big_numbers:
-            if list_string_numbers[index + 1] in dict_of_numbers: 
-                string_end += dict_of_big_numbers[element] + "+"
+            if index + 1 < len(list_string_numbers) and list_string_numbers[index + 1] in dict_of_numbers:
+                string_end += "(" + dict_of_big_numbers[element] + "+" + dict_of_numbers[list_string_numbers[index + 1]] + ")"
+                list_string_numbers[index + 1] = ""
             else:
                 string_end += dict_of_big_numbers[element]
+    print(string_end)
     result = eval(string_end)
     print(result)
     if abs(result) > 100:
@@ -67,9 +76,9 @@ def convert_to_str(number):
     if number < 0:
         return "минус " + convert_to_str(abs(number))
     
-    if len(str(number)) == 1:
+    if number < 20:
         return "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(number)])
-    elif len(str(number)) == 2:
+    elif number >= 20:
         des = str(number)[0]
         cif = str(number)[1]
         return "".join([i[0] for i in dict_of_big_numbers.items() if i[1] == str(des) + '0']) + " " + "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(cif)])
