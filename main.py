@@ -18,7 +18,7 @@ dict_of_numbers = {
     "шестнадцать": "16",
     "семнадцать": "17",
     "восемнадцать": "18",
-    "девятнацать": "19"    
+    "девятнадцать": "19"    
 }
 
 dict_of_big_numbers = {
@@ -51,12 +51,16 @@ def calc(string: str) -> int:
                 string_end += dict_of_big_numbers[element] + "+"
             else:
                 string_end += dict_of_big_numbers[element]
-    if eval(string_end) > 100:
+    result = eval(string_end)
+    if abs(result) > 100:
         return "Число больше ста"
-    return convert_to_str(eval(string_end))
+    return convert_to_str(result)
 
 
 def convert_to_str(number):
+    if number < 0:
+        return "минус " + convert_to_str(abs(number))
+    
     if len(str(number)) == 1:
         return "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(number)])
     elif len(str(number)) == 2:
@@ -64,4 +68,4 @@ def convert_to_str(number):
         cif = str(number)[1]
         return "".join([i[0] for i in dict_of_big_numbers.items() if i[1] == str(des) + '0']) + " " + "".join([i[0] for i in dict_of_numbers.items() if i[1] == str(cif)])
         
-print(calc(input()))
+print(calc(str(input())))
