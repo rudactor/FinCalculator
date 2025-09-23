@@ -35,13 +35,18 @@ dict_of_big_numbers = {
 dict_of_operations = {
     "плюс": "+",
     "минус": "-",
-    "умножить": "*"
+    "разделить_на": "//",
+    "умножить_на": "*"
 }
 
 def calc(string: str) -> int:
+    string = string.replace(" на", "_на")
     list_string_numbers = string.split()
+    print(list_string_numbers)
     string_end = ""
     for index, element in enumerate(list_string_numbers):
+        if list_string_numbers[index - 1] == 'разделить_на' and element == 'ноль':
+            return "Деление на ноль"
         if element in dict_of_numbers:
             string_end += dict_of_numbers[element]
         elif element in dict_of_operations:
@@ -52,6 +57,7 @@ def calc(string: str) -> int:
             else:
                 string_end += dict_of_big_numbers[element]
     result = eval(string_end)
+    print(result)
     if abs(result) > 100:
         return "Число больше ста"
     return convert_to_str(result)
