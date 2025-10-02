@@ -56,10 +56,14 @@ fraction_units = {
     "миллионная": 6, "миллионных": 6
 }
 
-def calc(string: str) -> int:
-    string = string.replace(" на", "_на")
-    list_string_numbers = string.split()
+brackets = {
+    "скобкаоткрывается": "(",
+    "скобказакрывается": ")"
+} 
 
+def calc(string: str) -> int:
+    string = string.replace(" на", "_на").replace("скобка ", "скобка")
+    list_string_numbers = string.split()
     i = 0
     while i < len(list_string_numbers):
         token = list_string_numbers[i]
@@ -82,6 +86,8 @@ def calc(string: str) -> int:
             string_end += dict_of_numbers[element]
         elif element in dict_of_operations:
             string_end += dict_of_operations[element]
+        elif element in brackets:
+            string_end += brackets[element]
         elif element in dict_of_big_numbers:
             if index + 1 < len(list_string_numbers) and list_string_numbers[index + 1] in dict_of_numbers:
                 string_end += "(" + dict_of_big_numbers[element] + "+" + dict_of_numbers[list_string_numbers[index + 1]] + ")"
