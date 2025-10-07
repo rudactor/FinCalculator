@@ -1,5 +1,7 @@
 from fractions import Fraction
 
+# словарь от 0 до 19
+
 dict_of_numbers = {
     "ноль": "0",
     "один": "1",
@@ -25,6 +27,8 @@ dict_of_numbers = {
     "девятнадцать": "19"
 }
 
+# словарь десятков
+
 dict_of_big_numbers = {
     "двадцать": "20",
     "тридцать": "30",
@@ -36,6 +40,8 @@ dict_of_big_numbers = {
     "девяносто": "90"
 }
 
+# словарь операций
+
 dict_of_operations = {
     "плюс": "+",
     "минус": "-",
@@ -43,6 +49,8 @@ dict_of_operations = {
     "умножить_на": "*",
     "остаток_от_деления": "%"
 }
+
+# словарь десятичных долей
 
 fraction_units = {
     "десятая": 1,
@@ -56,10 +64,14 @@ fraction_units = {
     "миллионная": 6, "миллионных": 6
 }
 
+# словарь скобок
+
 brackets = {
     "скобкаоткрывается": "(",
     "скобказакрывается": ")"
 } 
+
+# сливаем все вместе и считаем в конце
 
 def calc(string: str) -> int:
     string = string.replace(" на", "_на").replace("скобка ", "скобка")
@@ -103,6 +115,8 @@ def calc(string: str) -> int:
     if abs(result) > 100:
         return "Число больше ста"
     return fraction_to_words(frac_result)
+
+# парсим десятичные числа
 
 def fraction_to_words(frac: Fraction) -> str:
     integer_part = frac.numerator // frac.denominator
@@ -152,6 +166,8 @@ def unit_for_len(n: int) -> str:
     if n == 6: return "миллионных"
     return "дробь"
 
+# формируем десятичные числа
+
 def words_to_decimal(s: str):
     s = s.lower()
     parts = s.split(" и ")
@@ -166,6 +182,8 @@ def words_to_decimal(s: str):
     fraction_str = str(number).zfill(unit)
     return float(f"{integer_part}.{fraction_str}")
 
+# формируем числа
+
 def words_to_int(s: str) -> int:
     tokens = s.split()
     string_end = ""
@@ -179,6 +197,8 @@ def words_to_int(s: str) -> int:
             else:
                 string_end += dict_of_big_numbers[element]
     return eval(string_end)
+
+# конвертируем в строку
 
 def convert_to_str(number): 
     number = round(number, 3)
