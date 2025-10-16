@@ -130,6 +130,8 @@ def calc(string: str) -> str:
                    .replace("тангенс от", "тангенс_от")
     
     tokens = string.split()
+    print(tokens)
+    validate_number_words(tokens)
     string_end = ""
     print(tokens)
     i = 0
@@ -162,7 +164,7 @@ def calc(string: str) -> str:
                     arg_tokens.append(str(pi))
                 i += 1
             # Вычисляем аргумент и функцию
-            arg_value = eval("".join(arg_tokens))
+            arg_value = safe_eval("".join(arg_tokens))
             value = func(arg_value)
             value = round(value, 3)
             frac_value = Fraction(value).limit_denominator(10**6)
@@ -195,7 +197,8 @@ def calc(string: str) -> str:
 
     # --- Вычисление обычного выражения ---
     print(string_end)
-    result = eval(string_end)
+    validate_expression_sequence(string_end)
+    result = safe_eval(string_end)
     frac_result = Fraction(result).limit_denominator(10**6)
     return fraction_to_words(frac_result)
 
@@ -340,5 +343,83 @@ def convert_to_str(number):
     # Числа >= 1000 оставляем как цифры (можно расширить на тысячи)
     else:
         return str(number)
+
+# валидация
+
+def validate_number_words(tokens):
+    tokens = list(" ".join(tokens).replace("размещений из", "размещенийиз").replace("сочетанийиз", "сочетаний из").replace("перестановок из", "перестановокиз").split())
+    for token in tokens:
+        if token not in dict_of_numbers and token not in dict_of_big_numbers and \
+            token not in hundreds_map and token not in dict_of_operations and \
+            token not in fraction_units and token not in trigometric and \
+            token not in word_map and token not in trig_functions and \
+            token not in trig_constants and token != 'и' and token not in brackets and\
+            token not in ['размещенийиз', 'сочетанийиз', 'перестановокиз'] and token != 'по':
+                raise ValueError(f"Неправильная запись числа: {token}")
+        
+
+def validate_expression_sequence(expr: str):
+    prev_type = None  # "number", "operator", "open_bracket", "close_bracket"
+    stack = []
+    tokens = []
+    i = 0
+    while i < len(expr):
+        c = expr[i]
+        if c.isdigit() or c == '.':
+            num = c
+            i += 1
+            while i < len(expr) and (expr[i].isdigit() or expr[i] == '.'):
+                num += expr[i]
+                i += 1
+            tokens.append(num)
+            prev_type = "number"
+            continue
+        elif c in "+-":
+            # разрешаем двойные знаки ++, --, +-,-+
+            op = c
+            if i + 1 < len(expr) and expr[i+1] in "+-":
+                op += expr[i+1]
+                i += 1
+            if prev_type not in ("number", "close_bracket", None):
+                raise ValueError(f"Неправильная последовательность операторов: '{op}'")
+            tokens.append(op)
+            prev_type = "operator"
+        elif c in "*/%":
+            if prev_type not in ("number", "close_bracket"):
+                raise ValueError(f"Оператор '{c}' должен идти после числа или закрывающей скобки")
+            if c == "*" and i + 1 < len(expr) and expr[i+1] == "*":
+                tokens.append("**")
+                i += 1
+            else:
+                tokens.append(c)
+            prev_type = "operator"
+        elif c == "(":
+            if prev_type in ("number", "close_bracket"):
+                raise ValueError("Открывающая скобка не может идти после числа или закрывающей скобки")
+            tokens.append(c)
+            stack.append(c)
+            prev_type = "open_bracket"
+        elif c == ")":
+            if prev_type in ("operator", None):
+                raise ValueError("Закрывающая скобка не может идти после оператора или в начале")
+            if not stack:
+                raise ValueError("Лишняя закрывающая скобка")
+            tokens.append(c)
+            stack.pop()
+            prev_type = "close_bracket"
+        i += 1
+    if stack:
+        raise ValueError("Лишняя открывающая скобка")
+
+
+def safe_eval(expr):
+    """Выполнение выражения с защитой от деления на ноль"""
+    try:
+        result = eval(expr)
+        return result
+    except ZeroDivisionError:
+        raise ZeroDivisionError("Деление на ноль")
+
+
 
 print(calc(str(input())))
