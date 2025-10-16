@@ -1,30 +1,22 @@
 from fractions import Fraction
-from math import pi, sin, cos, tan
+from math import pi, sin, cos, tan, factorial
 
 # словарь от 0 до 19
 
 dict_of_numbers = {
     "ноль": "0",
-    "один": "1",
-    "одна": "1",
-    "два": "2",
-    "две": "2",
-    "три": "3",
-    "четыре": "4",
-    "пять": "5",
-    "шесть": "6",
-    "семь": "7",
-    "восемь": "8",
-    "девять": "9",
-    "десять": "10",
-    "одиннадцать": "11",
-    "двенадцать": "12",
-    "тринадцать": "13",
-    "четырнадцать": "14",
-    "пятнадцать": "15",
-    "шестнадцать": "16",
-    "семнадцать": "17",
-    "восемнадцать": "18",
+    "один": "1", "одна": "1", "одно": "1", "одним": "1", "одной": "1", "одного": "1", "одному": "1", "одним": "1", "одном": "1", "одной": "1",
+    "два": "2", "две": "2", "двумя": "2", "двух": "2",
+    "три": "3", "трем": "3", "тремя": "3", "трёх": "3", "трех": "3",
+    "четыре": "4", "четырем": "4", "четырьмя": "4", "четырёх": "4",
+    "пять": "5", "пяти": "5", "пятью": "5",
+    "шесть": "6", "шести": "6", "шестью": "6",
+    "семь": "7", "семи": "7", "семью": "7",
+    "восемь": "8", "восьми": "8", "восьмью": "8",
+    "девять": "9", "девяти": "9", "девятью": "9",
+    "десять": "10", "десяти": "10", "десятью": "10",
+    "одиннадцать": "11", "двенадцать": "12", "тринадцать": "13", "четырнадцать": "14",
+    "пятнадцать": "15", "шестнадцать": "16", "семнадцать": "17", "восемнадцать": "18",
     "девятнадцать": "19"
 }
 
@@ -108,6 +100,30 @@ brackets = {
 
 # сливаем все вместе и считаем в конце
 
+def combinatorial_calc(tokens):
+    # Размещения: A(n, k) = n! / (n-k)!
+    if "размещений" in tokens:
+        i = tokens.index("из")
+        n = words_to_int(tokens[i+1])
+        k = words_to_int(tokens[i+3])
+        if k > n:
+            return 0
+        return factorial(n) // factorial(n - k)
+    # Сочетания: C(n, k) = n! / (k! * (n-k)!)
+    elif "сочетаний" in tokens:
+        i = tokens.index("из")
+        n = words_to_int(tokens[i+1])
+        k = words_to_int(tokens[i+3])
+        if k > n:
+            return 0
+        return factorial(n) // (factorial(k) * factorial(n - k))
+    # Перестановки: P(n) = n!
+    elif "перестановок" in tokens:
+        i = tokens.index("из")
+        n = words_to_int(tokens[i+1])
+        return factorial(n)
+    return None
+
 def calc(string: str) -> str:
     string = string.replace(" на", "_на").replace("скобка ", "скобка_").replace("в степени", "в_степени")\
                    .replace("синус от", "синус_от").replace("косинус от", "косинус_от")\
@@ -117,6 +133,11 @@ def calc(string: str) -> str:
     string_end = ""
     print(tokens)
     i = 0
+    
+    comb_result = combinatorial_calc(tokens)
+    if comb_result is not None:
+        return convert_to_str(comb_result)
+    
     while i < len(tokens):
         token = tokens[i]
 
@@ -238,25 +259,17 @@ def unit_for_len(n: int) -> str:
 
 def words_to_decimal(s: str):
     s = s.lower()
-    if 'и' in s:
-        parts = s.split(" и ")
-        integer_part = words_to_int(parts[0])
+    parts = s.split(" и ")
+    integer_part = words_to_int(parts[0])
 
-        if len(parts) == 1:
-            return float(integer_part)
+    if len(parts) == 1:
+        return float(integer_part)
 
-        fraction_words = parts[1].strip().split()
-        number = words_to_int(" ".join(fraction_words[:-1]))
-        unit = fraction_units[fraction_words[-1]]
-        fraction_str = str(number).zfill(unit)
-        return float(f"{integer_part}.{fraction_str}")
-    elif len(s.split()) == 2:  # простая дробь
-        numerator, denominator_word = s.split()
-        numerator = words_to_int(numerator)
-        denominator = word_map[denominator_word]
-        return Fraction(numerator, denominator)
-    else:  # целое число
-        return Fraction(words_to_int(s), 1)
+    fraction_words = parts[1].strip().split()
+    number = words_to_int(" ".join(fraction_words[:-1]))
+    unit = fraction_units[fraction_words[-1]]
+    fraction_str = str(number).zfill(unit)
+    return float(f"{integer_part}.{fraction_str}")
 
 # формируем числа
 
