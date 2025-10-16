@@ -1,0 +1,331 @@
+from fractions import Fraction
+from math import pi, sin, cos, tan
+
+# словарь от 0 до 19
+
+dict_of_numbers = {
+    "ноль": "0",
+    "один": "1",
+    "одна": "1",
+    "два": "2",
+    "две": "2",
+    "три": "3",
+    "четыре": "4",
+    "пять": "5",
+    "шесть": "6",
+    "семь": "7",
+    "восемь": "8",
+    "девять": "9",
+    "десять": "10",
+    "одиннадцать": "11",
+    "двенадцать": "12",
+    "тринадцать": "13",
+    "четырнадцать": "14",
+    "пятнадцать": "15",
+    "шестнадцать": "16",
+    "семнадцать": "17",
+    "восемнадцать": "18",
+    "девятнадцать": "19"
+}
+
+# словарь десятков
+
+dict_of_big_numbers = {
+    "двадцать": "20",
+    "тридцать": "30",
+    "сорок": "40",
+    "пятьдесят": "50",
+    "шестьдесят": "60",
+    "семьдесят": "70",
+    "восемьдесят": "80",
+    "девяносто": "90"
+}
+
+hundreds_map = {
+    "сто": 100, "двести": 200, "триста": 300, "четыреста": 400,
+    "пятьсот": 500, "шестьсот": 600, "семьсот": 700,
+    "восемьсот": 800, "девятьсот": 900
+}
+
+
+# словарь операций
+
+dict_of_operations = {
+    "плюс": "+",
+    "минус": "-",
+    "разделить_на": "/",
+    "умножить_на": "*",
+    "остаток_от_деления": "%",
+    "в_степени": "**",
+    "синус_от": "sin",
+    "косинус_от": "cos",
+    "тангенс_от": "tan"
+}
+
+# словарь десятичных долей
+
+fraction_units = {
+    "десятая": 1,
+    "десятых": 1,
+    "сотая": 2,
+    "сотых": 2,
+    "тысячная": 3,
+    "тысячных": 3,
+    "десятитысячная": 4, "десятитысячных": 4,
+    "стотысячная": 5, "стотысячных": 5,
+    "миллионная": 6, "миллионных": 6
+}
+
+trigometric = {
+    "пи": "pi"
+}
+
+word_map = {
+        "вторых": 2, "третьих": 3, "четвёртых": 4, "четвертых": 4,
+        "пятых": 5, "шестых": 6, "седьмых": 7, "восьмых": 8,
+        "девятых": 9, "десятых": 10, "одиннадцатых": 11, "двенадцатых": 12,
+        "тринадцатых": 13, "четырнадцатых": 14, "пятнадцатых": 15,
+        "шестнадцатых": 16, "семнадцатых": 17, "восемнадцатых": 18, "девятнадцатых": 19,
+        "двадцатых": 20, "тридцатых": 30, "сороковых": 40
+    }
+
+trig_functions = {
+    "синус_от": sin,
+    "косинус_от": cos,
+    "тангенс_от": tan
+}
+
+trig_constants = {
+    "пи": "pi"
+}
+
+# словарь скобок
+
+brackets = {
+    "скобка_открывается": "(",
+    "скобка_закрывается": ")"
+} 
+
+# сливаем все вместе и считаем в конце
+
+def calc(string: str) -> str:
+    string = string.replace(" на", "_на").replace("скобка ", "скобка_").replace("в степени", "в_степени")\
+                   .replace("синус от", "синус_от").replace("косинус от", "косинус_от")\
+                   .replace("тангенс от", "тангенс_от")
+    
+    tokens = string.split()
+    string_end = ""
+    print(tokens)
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+
+        if token in brackets:
+            string_end += brackets[token]
+
+        elif token in trig_functions:
+            func = trig_functions[token] 
+            arg_tokens = []
+            i += 1
+            while i < len(tokens):
+                t = tokens[i]
+                if t in dict_of_numbers:
+                    arg_tokens.append(dict_of_numbers[t])
+                elif t in dict_of_big_numbers:
+                    arg_tokens.append(dict_of_big_numbers[t])
+                elif t in dict_of_operations:
+                    arg_tokens.append(dict_of_operations[t])
+                elif t in trig_constants:
+                    arg_tokens.append(str(trig_constants[t]))
+                else:
+                    arg_tokens.append(str(pi))
+                i += 1
+            # Вычисляем аргумент и функцию
+            arg_value = eval("".join(arg_tokens))
+            value = func(arg_value)
+            value = round(value, 3)
+            frac_value = Fraction(value).limit_denominator(10**6)
+            return fraction_to_words(frac_value)
+
+        elif token in dict_of_numbers or token in dict_of_big_numbers:
+            num_words = [token]
+            j = i + 1
+            while j < len(tokens) and tokens[j] not in dict_of_operations and tokens[j] not in brackets:
+                num_words.append(tokens[j])
+                j += 1
+            string_end += str(words_to_decimal(" ".join(num_words)))
+            i = j - 1
+        # --- операции ---
+        elif token in dict_of_operations:
+            string_end += dict_of_operations[token]
+
+        elif token in dict_of_numbers:
+            string_end += dict_of_numbers[token]
+        elif token in dict_of_big_numbers:
+            if i + 1 < len(tokens) and tokens[i+1] in dict_of_numbers:
+                string_end += f"({dict_of_big_numbers[token]}+{dict_of_numbers[tokens[i+1]]})"
+                tokens[i+1] = ""
+            else:
+                string_end += dict_of_big_numbers[token]
+        else:
+            string_end += token
+
+        i += 1
+
+    # --- Вычисление обычного выражения ---
+    print(string_end)
+    result = eval(string_end)
+    frac_result = Fraction(result).limit_denominator(10**6)
+    return fraction_to_words(frac_result)
+
+# парсим десятичные числа
+
+def fraction_to_words(frac: Fraction) -> str:
+    integer_part = frac.numerator // frac.denominator
+    remainder = frac.numerator % frac.denominator
+
+    if remainder == 0:
+        return convert_to_str(integer_part)
+
+    decimals = []
+    seen = {}
+    pos = 0
+    period_start = None
+
+    while remainder and pos < 20:
+        if remainder in seen:
+            period_start = seen[remainder]
+            break
+        seen[remainder] = pos
+        remainder *= 10
+        decimals.append(str(remainder // frac.denominator))
+        remainder %= frac.denominator
+        pos += 1
+
+    if period_start is not None:
+        non_periodic = "".join(decimals[:period_start])
+        periodic = "".join(decimals[period_start:period_start+4])
+    else:
+        non_periodic = "".join(decimals)
+        periodic = ""
+
+    res_parts = []
+    res_parts.append(convert_to_str(integer_part))
+
+    if non_periodic:
+        non_periodic_int = int(non_periodic) if non_periodic else 0
+        res_parts.append(
+            "и " + convert_to_str(non_periodic_int) + " " + unit_for_len(len(non_periodic))
+        )
+    if periodic:
+        # каждая цифра в словах
+        periodic_words = [convert_to_str(int(d)) for d in periodic]
+        periodic_str = " ".join(periodic_words)
+        res_parts.append(f"и {periodic_str} в периоде")
+
+    return " ".join(res_parts)
+
+def unit_for_len(n: int) -> str:
+    if n == 1: return "десятых"
+    if n == 2: return "сотых"
+    if n == 3: return "тысячных"
+    if n == 4: return "десятитысячных"
+    if n == 5: return "стотысячных"
+    if n == 6: return "миллионных"
+    return "дробь"
+
+# формируем десятичные числа
+
+def words_to_decimal(s: str):
+    s = s.lower()
+    if 'и' in s:
+        parts = s.split(" и ")
+        integer_part = words_to_int(parts[0])
+
+        if len(parts) == 1:
+            return float(integer_part)
+
+        fraction_words = parts[1].strip().split()
+        number = words_to_int(" ".join(fraction_words[:-1]))
+        unit = fraction_units[fraction_words[-1]]
+        fraction_str = str(number).zfill(unit)
+        return float(f"{integer_part}.{fraction_str}")
+    elif len(s.split()) == 2:  # простая дробь
+        numerator, denominator_word = s.split()
+        numerator = words_to_int(numerator)
+        denominator = word_map[denominator_word]
+        return Fraction(numerator, denominator)
+    else:  # целое число
+        return Fraction(words_to_int(s), 1)
+
+# формируем числа
+
+def words_to_int(s: str) -> int:
+    tokens = s.split()
+    total = 0
+    temp = 0
+    for token in tokens:
+        if token in dict_of_numbers:
+            temp += int(dict_of_numbers[token])
+        elif token in dict_of_big_numbers:
+            temp += int(dict_of_big_numbers[token])
+    total += temp
+    return total
+
+# конвертируем в строку
+
+def convert_to_str(number): 
+    number = round(number, 3)
+
+    if abs(number - round(number)) < 1e-6:
+        number = int(round(number))
+
+    if number < 0:
+        return "минус " + convert_to_str(abs(number))
+
+    # Дробные числа
+    if isinstance(number, float) and number % 1 != 0:
+        integer_part = int(number)
+        fraction_str = str(number).split(".")[1]
+        fraction_str = fraction_str.rstrip('0')
+        fraction_number = int(fraction_str)
+
+        if len(fraction_str) == 1:
+            unit_word = "десятая" if fraction_number == 1 else "десятых"
+        elif len(fraction_str) == 2:
+            unit_word = "сотая" if fraction_number == 1 else "сотых"
+        else:
+            unit_word = "тысячная" if fraction_number == 1 else "тысячных"
+
+        integer_words = "" if integer_part == 0 else convert_to_str(integer_part)
+        fraction_words = convert_to_str(fraction_number)
+
+        return f"{integer_words} и {fraction_words} {unit_word}" if integer_words else f"{fraction_words} {unit_word}"
+
+    number = int(number)
+
+    # Числа < 20
+    if number < 20:
+        return [k for k,v in dict_of_numbers.items() if v == str(number)][0]
+
+    # Числа < 100
+    elif number < 100:
+        tens, ones = divmod(number, 10)
+        tens_word = next((k for k,v in dict_of_big_numbers.items() if int(v) == tens*10), "")
+        return tens_word if ones == 0 else f"{tens_word} {convert_to_str(ones)}"
+
+    # Числа >= 100 и < 1000
+    elif number < 1000:
+        hundreds, remainder = divmod(number, 100)
+        hundreds_word = {1:"сто", 2:"двести",3:"триста",4:"четыреста",5:"пятьсот",
+                         6:"шестьсот",7:"семьсот",8:"восемьсот",9:"девятьсот"}[hundreds]
+        if remainder == 0:
+            return hundreds_word
+        else:
+            return f"{hundreds_word} {convert_to_str(remainder)}"
+
+    # Числа >= 1000 оставляем как цифры (можно расширить на тысячи)
+    else:
+        return str(number)
+
+print(calc(str(input())))
