@@ -1,4 +1,5 @@
 from fractions import Fraction
+import re
 from math import pi, sin, cos, tan, factorial
 
 # словарь от 0 до 19
@@ -81,6 +82,68 @@ word_map = {
         "двадцатых": 20, "тридцатых": 30, "сороковых": 40
     }
 
+words_to_denominators = {
+    "вторая": 2,
+    "третья": 3, "третьи": 3, "треть": 3, "третьих": 3,
+    "четвертая": 4, "четвертые": 4, "четверть": 4,
+    "пятая": 5, "пятые": 5, "пятых": 5,
+    "шестая": 6, "шестые": 6, "шестых": 6,
+    "седьмая": 7, "седьмые": 7, "седьмых": 7,
+    "восьмая": 8, "восьмые": 8,
+    "девятая": 9, "девятые": 9,
+    "десятая": 10, "десятые": 10
+}
+
+numbers_to_words = {v: k for k, v in dict_of_numbers.items()}
+denominators_to_words = {v: k for k, v in words_to_denominators.items()}
+
+def parse_fraction_words(s: str) -> Fraction:
+    s = s.lower().strip()
+    
+    # Цифровая дробь: "9/5"
+    if re.match(r'^\d+/\d+$', s):
+        numerator, denominator = map(int, s.split("/"))
+        return Fraction(numerator, denominator)
+    
+    # Целое число цифрой
+    if s.isdigit():
+        return Fraction(int(s), 1)
+    
+    tokens = s.split()
+    
+    # Дробь с целой частью: "один и четыре пятых"
+    if "и" in tokens:
+        idx = tokens.index("и")
+        whole_words = tokens[:idx]
+        frac_words = tokens[idx+1:]
+        
+        # Целая часть
+        whole = sum(int(dict_of_numbers.get(w, 0)) for w in whole_words)
+        
+        # Дробная часть
+        if len(frac_words) != 2:
+            raise ValueError(f"Неверный формат дробной части: {' '.join(frac_words)}")
+        numerator_word, denominator_word = frac_words
+        numerator = int(dict_of_numbers.get(numerator_word, 0))
+        denominator = words_to_denominators.get(denominator_word)
+        if denominator is None:
+            raise ValueError(f"Неизвестный знаменатель: {denominator_word}")
+        return Fraction(whole * denominator + numerator, denominator)
+    
+    # Простая дробь без целой части: "шесть седьмых"
+    if len(tokens) == 2:
+        numerator = int(dict_of_numbers.get(tokens[0], 0))
+        denominator = words_to_denominators.get(tokens[1])
+        if denominator is None:
+            raise ValueError(f"Неизвестный знаменатель: {tokens[1]}")
+        return Fraction(numerator, denominator)
+    
+    # Целое число словами: "три"
+    if len(tokens) == 1 and tokens[0] in dict_of_numbers:
+        return Fraction(int(dict_of_numbers[tokens[0]]), 1)
+    
+    raise ValueError(f"Не удалось распознать дробь: {s}")
+
 trig_functions = {
     "синус_от": sin,
     "косинус_от": cos,
@@ -97,6 +160,81 @@ brackets = {
     "скобка_открывается": "(",
     "скобка_закрывается": ")"
 } 
+
+def fraction_to_words_drobs(frac: Fraction) -> str:
+    frac = frac.limit_denominator()
+    whole = frac.numerator // frac.denominator
+    numerator = frac.numerator % frac.denominator
+    denominator = frac.denominator
+
+    parts = []
+
+    # --- целая часть ---
+    if whole > 0:
+        parts.append(convert_to_str(whole))
+
+    # --- дробная часть ---
+    if numerator > 0:
+        # числитель
+        if numerator == 1:
+            numerator_word = "одна"
+        elif numerator == 2:
+            numerator_word = "две"
+        else:
+            numerator_word = convert_to_str(numerator)
+
+        # знаменатель
+        denom_word = convert_to_str(denominator)
+        # корректная морфология
+        if numerator == 1:
+            if denom_word.endswith("ь"):
+                denom_word = denom_word[:-1] + "ая"
+            elif denom_word.endswith("и"):
+                denom_word = denom_word[:-1] + "ая"
+            elif denom_word.endswith("е"):
+                denom_word = denom_word[:-1] + "ая"
+            else:
+                denom_word += "я"
+        else:
+            if denom_word.endswith("я"):
+                denom_word = denom_word[:-1] + "их"
+            elif denom_word.endswith("е"):
+                denom_word = denom_word[:-1] + "ых"
+            elif denom_word.endswith("а"):
+                denom_word = denom_word[:-1] + "ых"
+            else:
+                denom_word += "ых"
+
+        frac_part = f"{numerator_word} {denom_word}"
+        if whole > 0:
+            parts.append("и " + frac_part)
+        else:
+            parts.append(frac_part)
+
+    if not parts:
+        return "ноль"
+
+    return " ".join(parts)
+
+
+def operate_fractions(frac1_words: str, operator: str, frac2_words: str) -> str:
+    f1 = parse_fraction_words(frac1_words)
+    f2 = parse_fraction_words(frac2_words)
+    
+    if operator == "плюс":
+        result = f1 + f2
+    elif operator == "минус":
+        result = f1 - f2
+    elif operator == "умножить_на":
+        result = f1 * f2
+    elif operator == "разделить_на":
+        if f2 == 0:
+            raise ZeroDivisionError("Деление на ноль")
+        result = f1 / f2
+    else:
+        raise ValueError(f"Неподдерживаемая операция: {operator}")
+    
+    return fraction_to_words_drobs(result)
 
 # сливаем все вместе и считаем в конце
 
@@ -124,16 +262,44 @@ def combinatorial_calc(tokens):
         return factorial(n)
     return None
 
+def is_plain_fraction(s: str) -> bool:
+    tokens_s = s.lower().split()
+    if not tokens_s:
+        return False
+    if len(tokens_s) == 1:
+        return tokens_s[0] in dict_of_numbers
+    if "и" in tokens_s:
+        idx = tokens_s.index("и")
+        frac_words = tokens_s[idx+1:]
+        return len(frac_words) == 2 and frac_words[0] in dict_of_numbers and frac_words[1] in words_to_denominators
+    if len(tokens_s) == 2:
+        return tokens_s[0] in dict_of_numbers and tokens_s[1] in words_to_denominators
+    return False
+
 def calc(string: str) -> str:
     string = string.replace(" на", "_на").replace("скобка ", "скобка_").replace("в степени", "в_степени")\
                    .replace("синус от", "синус_от").replace("косинус от", "косинус_от")\
                    .replace("тангенс от", "тангенс_от")
     
+    tokens = string.lower().split()
+    
+    for i, token in enumerate(tokens):
+        if token in ["плюс", "минус", "умножить_на", "разделить_на"]:
+            frac1_words = " ".join(tokens[:i])
+            operator = token
+            frac2_words = " ".join(tokens[i+1:])
+            
+            if is_plain_fraction(frac1_words) and is_plain_fraction(frac2_words):
+                validate_fraction_words(frac1_words)
+                validate_fraction_words(frac2_words)
+                return operate_fractions(frac1_words, operator, frac2_words)
+            else:
+                continue
+    
     tokens = string.split()
-    print(tokens)
+    
     validate_number_words(tokens)
     string_end = ""
-    print(tokens)
     i = 0
     
     comb_result = combinatorial_calc(tokens)
@@ -225,7 +391,7 @@ def fraction_to_words(frac: Fraction) -> str:
         decimals.append(str(remainder // frac.denominator))
         remainder %= frac.denominator
         pos += 1
-
+    
     if period_start is not None:
         non_periodic = "".join(decimals[:period_start])
         periodic = "".join(decimals[period_start:period_start+4])
@@ -354,7 +520,8 @@ def validate_number_words(tokens):
             token not in fraction_units and token not in trigometric and \
             token not in word_map and token not in trig_functions and \
             token not in trig_constants and token != 'и' and token not in brackets and\
-            token not in ['размещенийиз', 'сочетанийиз', 'перестановокиз'] and token != 'по':
+            token not in ['размещенийиз', 'сочетанийиз', 'перестановокиз'] and token != 'по' and\
+            token not in words_to_denominators:
                 raise ValueError(f"Неправильная запись числа: {token}")
         
 
@@ -411,6 +578,60 @@ def validate_expression_sequence(expr: str):
     if stack:
         raise ValueError("Лишняя открывающая скобка")
 
+def validate_fraction_words(s: str):
+    """Проверяет, что дробь корректна и может быть распознана."""
+    s = s.lower().strip()
+    tokens = s.split()
+
+    if not tokens:
+        raise ValueError("Пустая дробь недопустима")
+
+    # Цифровая дробь: "9/5"
+    if re.match(r'^\d+/\d+$', s):
+        numerator, denominator = map(int, s.split("/"))
+        if denominator == 0:
+            raise ValueError("Знаменатель не может быть равен нулю")
+        return
+
+    # Целое число
+    if len(tokens) == 1:
+        if tokens[0] not in dict_of_numbers:
+            raise ValueError(f"Неизвестное число: {tokens[0]}")
+        return
+
+    # Смешанное число: "один и четыре пятых"
+    if "и" in tokens:
+        idx = tokens.index("и")
+        whole_words = tokens[:idx]
+        frac_words = tokens[idx+1:]
+
+        if len(frac_words) != 2:
+            raise ValueError(f"Неверный формат дробной части: {' '.join(frac_words)}")
+
+        numerator_word, denominator_word = frac_words
+
+        if numerator_word not in dict_of_numbers:
+            raise ValueError(f"Неизвестный числитель дроби: {numerator_word}")
+        if denominator_word not in words_to_denominators:
+            raise ValueError(f"Неизвестный знаменатель дроби: {denominator_word}")
+
+        # Проверяем знаменатель != 0
+        if words_to_denominators[denominator_word] == 0:
+            raise ValueError("Знаменатель не может быть равен нулю")
+        return
+
+    # Простая дробь без целой части: "шесть седьмых"
+    if len(tokens) == 2:
+        numerator_word, denominator_word = tokens
+        if numerator_word not in dict_of_numbers:
+            raise ValueError(f"Неизвестный числитель дроби: {numerator_word}")
+        if denominator_word not in words_to_denominators:
+            raise ValueError(f"Неизвестный знаменатель дроби: {denominator_word}")
+        if words_to_denominators[denominator_word] == 0:
+            raise ValueError("Знаменатель не может быть равен нулю")
+        return
+
+    raise ValueError(f"Невозможно распознать дробь: {s}")
 
 def safe_eval(expr):
     """Выполнение выражения с защитой от деления на ноль"""
@@ -421,5 +642,4 @@ def safe_eval(expr):
         raise ZeroDivisionError("Деление на ноль")
 
 
-
-print(calc(str(input())))
+print("Ваш ответ ", calc(str(input("Введите арифметическое выражение: "))))
